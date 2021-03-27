@@ -1,26 +1,20 @@
-const uuid = require('uuid');
 const { validationResult } = require('express-validator');
 
 const HttpError = require('../models/http-error');
 const User = require('../models/user');
 
-const DUMMY_USERS = [
-    {
-      id: 'u1',
-      name: 'Rukshan Jayasekara',
-      email: 'rukshanjayasekara@outlook.com',
-      password: 'rukshan123'
-    },
-    {
-        id: 'u2',
-        name: 'Leo Messi',
-        email: 'messi@fcbarcelona.com',
-        password: 'messi123'
-      }
-  ];
-
-  const getUsers = (req, res, next) => {
-    res.json({ users: DUMMY_USERS });
+  const getUsers = async (req, res, next) => {
+    let users;
+    try{
+      users = await User.find({}, '-password');
+    } catch(err) {
+      const error = new HttpError(
+        'Could not find any users.',
+        500
+      );
+      return next(error);
+    }
+    res.json({ users: users.map(user => user.toObject({ getters: true })) });
   };
 
   const signup = async (req, res, next) => {
@@ -29,7 +23,7 @@ const DUMMY_USERS = [
         return next(new HttpError('Invalid inputs! Please check again.', 422));
     }
     
-    const { name, email, password, places } = req.body;
+    const { name, email, password } = req.body;
 
     let existingUser;
     try{
@@ -55,7 +49,7 @@ const DUMMY_USERS = [
       email,
       password,
       image: 'https://scontent.fcmb2-1.fna.fbcdn.net/v/t1.0-9/80344383_249388319364186_3624819842248343552_n.jpg?_nc_cat=109&ccb=1-3&_nc_sid=09cbfe&_nc_ohc=T9FwLm1fSSMAX_WYmHx&_nc_ht=scontent.fcmb2-1.fna&oh=d3f281a168e58f13895e40760d14dedc&oe=60830B43',
-      places
+      places: []
     });
 
     try{
