@@ -4,6 +4,7 @@ const { validationResult } = require('express-validator');
 const HttpError = require('../models/http-error');
 const getCoorsForAddress = require('../util/location');
 const Place = require('../models/place');
+const place = require('../models/place');
 
 let DUMMY_PLACES = [
     {
@@ -30,29 +31,43 @@ let DUMMY_PLACES = [
       }
   ];
 
-const getPlaceById = (req, res, next) => {
+const getPlaceById = async (req, res, next) => {
     const placeId = req.params.pid;
 
-    const place = DUMMY_PLACES.find(p => {
-        return p.id === placeId;
-    });
+    let place;
+    try{
+        place = await Place.findById(placeId); 
+    } catch(err) {
+        const error = new HttpError(
+            'Something went wrong. Could not find a place',
+            500
+        );
+        return next(error);
+    }
 
     if(!place) {
         return next(new HttpError('Could not find a place.', 404));
     }
-    res.json({ place });
+    res.json({ place: place.toObject({ getters: true }) });
 };
 
-const getPlaceByUserId = (req, res, next) => {
+const getPlaceByUserId = async (req, res, next) => {
     const userId = req.params.uid;
 
-    const places = DUMMY_PLACES.filter(p => {
-        return p.creator === userId;
-    });
+    let places;
+    try{
+        places = await Place.find({creator: userId});
+    } catch(err) {
+        const error = new HttpError(
+            'Something went wrong, could not find places',
+            500
+        );
+        return next(error);
+    }
     if(!places || places.length === 0) { 
         return next(new HttpError('Could not find a place for the provided user id.', 404));
     }
-    res.json({ places });
+    res.json({ places: places.map(place => place.toObject({ getters: true })) });
 };
 
 const createPlace = async (req, res, next) => {
