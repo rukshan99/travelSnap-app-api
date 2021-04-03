@@ -85,7 +85,10 @@ const signin = async (req, res, next) => {
       );
       return next(error);
     }
-    res.json({message: 'Signed in!'}); 
+    res.json({
+		message: 'Signed in!',
+		user: existingUser.toObject({ getters: true });
+	}); 
 };
 
 exports.getUsers = getUsers;
